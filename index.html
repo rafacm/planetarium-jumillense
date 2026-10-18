@@ -919,7 +919,7 @@ document.getElementById('resetBtn').onclick = e => {
 
 // ---------- print (A4) ----------
 // Vector maps in local metres (north up), sized for an A4 page at 180 mm wide.
-function svgMap(R, planets, cats, scaleKm, maxRoad = 2) {
+function svgMap(R, planets, cats, scaleKm, maxRoad = 2, pointers = false) {
   const W = 2 * R, k = W / 180, f = n => n.toFixed(0);
   const P = ll => { const [x, y] = xy(ll); return [x, -y]; };
   const pts = list => list.map(ll => P(ll).map(f).join(' ')).join('L');
@@ -957,6 +957,32 @@ function svgMap(R, planets, cats, scaleKm, maxRoad = 2) {
     const [x, y] = P(ll); if (!inFrame([x, y])) continue;
     g += `<circle cx="${f(x)}" cy="${f(y)}" r="${f(1.5 * k)}" fill="${p.cl}" stroke="#fff" stroke-width="${f(.35 * k)}"/>` + txt(x + 2.3 * k, y + 1 * k, p.n, 3, 700);
   }
+  // Pedanías outside the frame: an arrow at the edge pointing toward each, with its distance.
+  if (pointers) {
+    const boxes = [], lh = 3.4 * k, m = 2.2 * k;
+    const hit = b => boxes.some(o => b.x1 < o.x2 && b.x2 > o.x1 && b.y1 < o.y2 && b.y2 > o.y1);
+    const out = OSM.pts.filter(q => q.c === 'ped').map(q => ({ q, xy: P([q.la, q.lo]) })).filter(o => !inFrame(o.xy))
+      .sort((a, b) => Math.hypot(...a.xy) - Math.hypot(...b.xy));
+    for (const { q, xy: [x, y] } of out) {
+      const d = Math.hypot(x, y), cx = x / d, cy = y / d, t = (R - m) / Math.max(Math.abs(cx), Math.abs(cy));
+      const ex = cx * t, ey = cy * t, side = Math.abs(cx) > Math.abs(cy) ? (cx > 0 ? 'r' : 'l') : (cy > 0 ? 'b' : 't');
+      const label = `${q.n} · ${fmtDist(dist(xy([q.la, q.lo]), [0, 0]))}`, w = label.length * 1.2 * k;
+      // Label sits just inside the arrow; slide it inward until it clears earlier labels.
+      let lx = side === 'r' ? ex - 3.6 * k : side === 'l' ? ex + 3.6 * k : ex > 0 ? ex - 3.6 * k : ex + 3.6 * k;
+      let ly = side === 'b' ? ey - 3.2 * k : side === 't' ? ey + 4.6 * k : ey + 1 * k;
+      const anchor = side === 'r' || ((side === 't' || side === 'b') && ex > 0) ? 'end' : 'start';
+      if ((side === 't' || side === 'b') && Math.abs(ex) < R * .5) lx = anchor === 'end' ? ex + w / 2 : ex - w / 2;
+      const box = () => { const x1 = anchor === 'end' ? lx - w : lx - 3 * k; return { x1, x2: x1 + w + 3 * k, y1: ly - lh * .8, y2: ly + lh * .25 }; };
+      const step = side === 'b' ? -lh : lh;
+      for (let i = 0; i < 12 && hit(box()); i++) ly += step;
+      boxes.push(box());
+      const ang = Math.atan2(cy, cx) * 180 / Math.PI;
+      // Arrow beside the name (after it when right-aligned, before it otherwise), pointing toward the pedanía.
+      const ax = anchor === 'end' ? lx + 2.2 * k : lx - 2.2 * k, ay = ly - .8 * k;
+      g += `<path d="M${f(1.1 * k)} 0L${f(-1.1 * k)} ${f(-1 * k)}L${f(-1.1 * k)} ${f(1 * k)}Z" transform="translate(${f(ax)} ${f(ay)}) rotate(${ang.toFixed(1)})" fill="${CATS.ped.cl}"/>`;
+      g += txt(lx, ly, label, 2.3, 600, anchor);
+    }
+  }
   const bx = -R + 6 * k, by = R - 7 * k, bl = scaleKm * 1000;
   g += `<rect x="${f(bx)}" y="${f(by)}" width="${f(bl)}" height="${f(1.2 * k)}" fill="#1c2130"/><rect x="${f(bx + bl / 2)}" y="${f(by)}" width="${f(bl / 2)}" height="${f(1.2 * k)}" fill="#fff" stroke="#1c2130" stroke-width="${f(.2 * k)}"/>`;
   g += txt(bx, by - 1.3 * k, '0', 2.3, 500, 'middle') + txt(bx + bl, by - 1.3 * k, scaleKm < 1 ? `${scaleKm * 1000} m` : `${scaleKm} km`, 2.3, 600, 'middle');
@@ -969,9 +995,12 @@ function buildPrint() {
   const P = PLANETS.filter(p => !p.extra), au = v => v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: v < .01 ? 5 : 4 }), cm = v => fmtN(v / .27), kmv = v => fmtDist(v * M_PER_AU);
   const today = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
   const Rbig = Math.max(...P.map(p => p.e[1] * M_PER_AU)) + 1200;
-  const legend = `<div class="legend-p"><span><i class="k" style="border:.3mm dashed #3c4357"></i>Distancia a la Tierra (mín.–máx.)</span>
+  const dot = (c, n) => `<span><i class="dotp" style="background:${c}"></i>${n}</span>`;
+  const legendFor = (planets, extra = '') => `<div class="legend-p"><span><i class="k" style="border:.3mm dashed #3c4357"></i>Distancia a la Tierra (mín.–máx.)</span>
     <span><i class="k" style="background:#3c435722"></i>Órbita alrededor del Sol</span><span><i class="k" style="background:#3c435777;border:.2mm solid #3c4357"></i>Zona ideal</span>
-    ${P.map(p => `<span><i class="dotp" style="background:${p.cl}"></i>${p.n}</span>`).join('')}</div>`;
+    <span><i class="k" style="background:${SUN.c}88;border:.2mm solid ${SUN.cl};border-radius:2mm"></i>Anillo del Sol</span>
+    ${dot(SUN.c, 'Sol')}${dot(EARTHB.cl, 'Tierra')}${planets.map(p => dot(p.cl, p.n)).join('')}${extra}</div>`;
+  const legend = legendFor(P, dot(CATS.ped.cl, 'Pedanía'));
   const pg1 = `<section class="pp">
     <header><h1>Planetarium Jumillense</h1><p class="sub">El sistema solar a escala sobre el término municipal de Jumilla<br>${today}<br><a class="url" href="https://planetarium-jumillense.vercel.app">https://planetarium-jumillense.vercel.app</a></p></header>
     <div class="intro">
@@ -1004,7 +1033,8 @@ function buildPrint() {
   const pg2 = `<section class="pp">
     <h2>El sistema solar interior</h2>
     <p>El Sol, Mercurio, Venus, la Tierra y Marte caben en unos 2,5 km alrededor del Castillo.</p>
-    <div class="inset${ex.length ? ' compact' : ''}">${svgMap(Rin, inner, ['ped', 'town', 'arq', 'bod', 'pico', 'cas'], .5, 3)}</div>
+    <div class="inset${ex.length ? ' compact' : ''}">${svgMap(Rin, inner, ['ped', 'town', 'arq', 'bod', 'pico', 'cas'], .5, 3, true)}</div>
+    ${legendFor(inner, dot(CATS.ped.cl, 'Pedanía') + dot(CATS.bod.cl, 'Bodega') + dot(CATS.arq.cl, 'Arqueología') + dot(CATS.pico.cl, 'Pico') + `<span><b style="color:${CATS.ped.cl}">▶</b>Dirección a una pedanía fuera del mapa</span>`)}
     <h2>Ubicación de los astros</h2>
     <table><thead><tr><th>Astro</th><th>Latitud</th><th>Longitud</th><th>A la Tierra</th><th>Al Sol</th><th>Estado</th></tr></thead><tbody>${rows}</tbody></table>
     ${exT}
