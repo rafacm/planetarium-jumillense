@@ -1,0 +1,13 @@
+Planetarium Jumillense
+Copyright (c) 2026 Carmen Marcos and Rafael Cordones
+
+Third-party data
+
+The map data embedded in index.html (municipal boundary, roads, streets,
+villages, archaeological sites, wineries and peaks) comes from OpenStreetMap
+and is © OpenStreetMap contributors, available under the Open Database License
+(ODbL) 1.0: https://www.openstreetmap.org/copyright. It is not covered by the
+MIT License in LICENSE.
+
+The base map tiles are loaded at runtime from Esri and OpenStreetMap and are
+subject to their own terms.

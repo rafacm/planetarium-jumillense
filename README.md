@@ -37,4 +37,4 @@ Una propuesta de [Carmen Marcos](https://carmen-marcos.art/).
 
 El código está bajo la [licencia MIT](LICENSE), © 2026 Carmen Marcos y Rafael
 Cordones. Los datos de OpenStreetMap incluidos en la página mantienen su propia
-licencia (ODbL 1.0).
+licencia (ODbL 1.0); ver [NOTICE](NOTICE).
