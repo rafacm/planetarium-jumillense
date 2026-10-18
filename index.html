@@ -338,7 +338,7 @@ const DOC_NEPTUNE = [38.338739, -1.083809];   // point given in the original pro
 function defaultState() {
   return { sun: null, placed: {}, scale: 'u', mode: 'all',
            show: { E: true, S: true, Z: true }, base: 'light', poi: { ped: true, cas: true, arq: true, bod: true, pico: true, pue: true }, sel: null,
-           extras: { pluton: false, kuiper: false, helio: false, oort: false } };
+           extras: { pluton: false, kuiper: false, helio: false, oort: false, proxima: false } };
 }
 const KEY = 'planetarium-jumilla-v3';
 let state = defaultState();
@@ -600,6 +600,9 @@ const EXTRAS = [
     txt: 'La burbuja que crea el viento del Sol. La Voyager 1 cruzó el choque de terminación en 2004 (94 UA) y la heliopausa, la frontera con el espacio interestelar, en 2012 (121,6 UA).' },
   { id: 'oort', n: 'Nube de Oort', sub: 'La frontera gravitatoria del Sol', au: [2000, 5000], c: '#a8b2d6', cl: '#4f5b8c',
     txt: 'Una esfera de cometas helados. Su borde interior empezaría entre 2.000 y 5.000 UA. El exterior, a unas 100.000 UA, estaría a 92.600 km de Jumilla: más de dos vueltas a la Tierra, así que no se puede dibujar.' },
+  // 4.2465 light-years × 63,241 AU per light-year. A single distance, too far to draw.
+  { id: 'proxima', n: 'Próxima Centauri', sub: 'La estrella más cercana al Sol', au: [268553, 268553], single: true, c: '#e8846b', cl: '#b4472c',
+    txt: 'Una enana roja a 4,25 años luz del Sol. A esta escala no cabe en ningún mapa: estaría más lejos que cualquier punto de la Tierra.' },
 ];
 const extrasLayer = L.layerGroup().addTo(map);
 const ringLabel = (ll, text, layer, small) => L.marker(ll, { icon: L.divIcon({ className: '', html: '', iconSize: [0, 0] }), interactive: false })
@@ -608,7 +611,7 @@ function drawExtras() {
   extrasLayer.clearLayers();
   const S = state.sun || EARTH;
   for (const x of EXTRAS) {
-    if (!state.extras[x.id] || !x.c) continue;
+    if (!state.extras[x.id] || !x.c || x.single) continue;
     const c = col(x);
     if (x.rings) {
       for (const [au, text, dash] of x.rings) {
@@ -643,13 +646,15 @@ function renderExtras() {
     const on = state.extras[x.id], c = col(x.c ? x : PLANETS[7]);
     const r1 = x.au[0] * M_PER_AU, r2 = x.au[1] * M_PER_AU;
     let h = `<div class="ex"><label><input type="checkbox" data-extra="${x.id}" ${on ? 'checked' : ''}><span class="sw" style="background:${c}"></span>
-      <span><b>${x.n}</b><small>${x.sub} · ${fmtN(x.au[0], 0)}–${fmtN(x.au[1], 0)} UA = ${fmtDist(r1)}–${fmtDist(r2)}</small></span></label>`;
+      <span><b>${x.n}</b><small>${x.sub} · ${x.single ? `${fmtN(x.au[0], 0)} UA = ${fmtDist(r1)}` : `${fmtN(x.au[0], 0)}–${fmtN(x.au[1], 0)} UA = ${fmtDist(r1)}–${fmtDist(r2)}`}</small></span></label>`;
     if (on) {
       let where;
       if (x.id === 'helio') where = x.rings.map(([au, t]) => `<p><b>${t.split(' · ')[0]}</b> (${fmtDist(au * M_PER_AU)}): pasa cerca de ${near(au * M_PER_AU, towns).join(', ') || 'zonas sin pueblos marcados'}.</p>`).join('');
+      else if (x.id === 'proxima') where = `<p>Daría <b>${fmtN(r1 / 40075000, 1)} vueltas</b> a la Tierra y recorrería <b>${Math.round(r1 / 384400000 * 100)} %</b> del camino a la Luna de verdad. El borde exterior de la nube de Oort llegaría solo a un tercio de esa distancia.</p>
+        <p>Está tan al sur del cielo (declinación −62,7°) que nunca sale sobre el horizonte de Jumilla.</p>`;
       else if (x.id === 'oort') where = `<p><b>Borde interior</b> (${fmtDist(r1)}): pasa cerca de ${near(r1, WORLD, 5).join(', ')}.</p>`;
       else where = `<p><b>Dentro de la banda:</b> ${within(r1, r2, towns).join(', ')}.</p>`;
-      h += `<div class="extext"><p>${x.txt}</p>${where}<div class="actions"><button type="button" class="btn" data-fit="${x.id}">Ver en el mapa</button></div></div>`;
+      h += `<div class="extext"><p>${x.txt}</p>${where}${x.single ? '' : `<div class="actions"><button type="button" class="btn" data-fit="${x.id}">Ver en el mapa</button></div>`}</div>`;
     }
     return h + '</div>';
   }).join('');
@@ -900,7 +905,8 @@ function buildPrint() {
     <div class="big">${svgMap(Rbig, P, ['ped', 'town', 'pue'], 5)}</div>
     ${legend}
   </section>`;
-  const ex = EXTRAS.filter(x => x.id !== 'pluton' && state.extras[x.id]);
+  // Pluto and Próxima Centauri stay on the web page; the printout covers the solar system's planets and regions.
+  const ex = EXTRAS.filter(x => x.id !== 'pluton' && x.id !== 'proxima' && state.extras[x.id]);
   const exT = ex.length ? `<div class="keep"><h2>Más allá de los planetas</h2><table><thead><tr><th>Región</th><th>UA</th><th>Distancia a escala</th><th>Nota</th></tr></thead><tbody>${ex.map(x =>
     `<tr><td>${x.n}</td><td>${fmtN(x.au[0], 0)}–${fmtN(x.au[1], 0)}</td><td>${fmtDist(x.au[0] * M_PER_AU)}–${fmtDist(x.au[1] * M_PER_AU)}</td><td class="t">${x.sub}</td></tr>`).join('')}</tbody></table></div>` : '';
   const inner = P.filter(p => p.s[1] < 2);   // Mercurio, Venus, Marte
