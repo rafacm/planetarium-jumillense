@@ -498,8 +498,8 @@ const markerLayer = L.layerGroup().addTo(map);   // pins at low zoom
 const bodyLayer = L.layerGroup();                 // true-size spheres at high zoom
 const BODY_ZOOM = 17;
 
-const pinIcon = (b, cls = '') => L.divIcon({ className: 'pin ' + cls, html: `<i style="--c:${col(b)}"></i><b>${esc(b.n)}</b>`, iconSize: [16, 16], iconAnchor: [8, 8] });
-L.marker(EARTH, { icon: pinIcon(EARTHB, 'earth'), interactive: false, zIndexOffset: 500 }).addTo(markerLayer);
+const pinIcon = (b, cls = '', label = b.n) => L.divIcon({ className: 'pin ' + cls, html: `<i style="--c:${col(b)}"></i><b>${esc(label)}</b>`, iconSize: [16, 16], iconAnchor: [8, 8] });
+L.marker(EARTH, { icon: pinIcon(EARTHB, 'earth', 'Tierra · Castillo'), interactive: false, zIndexOffset: 500 }).addTo(markerLayer);
 const sunRing = L.polygon(annulus([0, 0], SUN_MIN, SUN_MAX), { renderer: canvas, color: col(SUN), weight: 1, opacity: .6, fillColor: col(SUN), fillOpacity: .12, interactive: false }).addTo(map);
 const sunMarker = L.marker(state.sun || EARTH, { icon: pinIcon(SUN, 'sun'), draggable: true, zIndexOffset: 1000, keyboard: true, title: 'Arrastra el Sol' });
 // Keep the Sun on its ring: 0.9833–1.0167 AU from the Earth.
