@@ -5,7 +5,7 @@ sobre el término municipal de Jumilla (Murcia). La Tierra está en la torre del
 Castillo; cada planeta se coloca en la zona donde coinciden su distancia a la
 Tierra y su órbita alrededor del Sol.
 
-Web: https://planetarium-jumillense.vercel.app
+Web: https://rafacm.github.io/planetarium-jumillense/
 
 ## Escala
 
