@@ -136,13 +136,15 @@ svg.lineup { width: 100%; height: auto; display: block; margin-bottom: 8px; }
 #print .intro p { margin-bottom: 2mm; break-inside: avoid; }
 #print svg { width: 100%; height: auto; display: block; border: .3mm solid #c9ccd4; }
 #print .big svg { width: 170mm; margin: 0 auto; }
-#print .inset svg { width: 128mm; margin: 0 auto; }
+#print .inset svg { width: 142mm; margin: 0 auto; }
+#print .inset.compact svg { width: 112mm; }
+#print .keep { break-inside: avoid; }
 #print .legend-p { display: flex; flex-wrap: wrap; gap: 1.5mm 6mm; font-size: 8pt; color: #3c4357; }
 #print .legend-p span { display: inline-flex; align-items: center; gap: 1.5mm; }
 #print .k { display: inline-block; width: 7mm; height: 3mm; }
 #print table { width: 100%; border-collapse: collapse; font-size: 8.3pt; break-inside: avoid; }
-#print th { text-align: right; font-weight: 600; color: #5d6476; font-size: 7.5pt; padding: 1mm 1.5mm; border-bottom: .3mm solid #9aa0ae; }
-#print td { text-align: right; padding: .9mm 1.5mm; border-bottom: .2mm solid #e1e2e6; font-family: var(--mono); font-size: 8pt; font-variant-numeric: tabular-nums; }
+#print th { text-align: right; font-weight: 600; color: #5d6476; font-size: 7.5pt; padding: .7mm 1.5mm; border-bottom: .3mm solid #9aa0ae; }
+#print td { text-align: right; padding: .45mm 1.5mm; border-bottom: .2mm solid #e1e2e6; font-family: var(--mono); font-size: 8pt; font-variant-numeric: tabular-nums; }
 #print th:first-child, #print td:first-child { text-align: left; font-family: var(--body); font-size: 8.5pt; }
 #print td.t { font-family: var(--body); text-align: left; }
 #print .y { color: #23824d; } #print .n { color: #bb3c2a; }
@@ -834,7 +836,7 @@ document.getElementById('resetBtn').onclick = e => {
 
 // ---------- print (A4) ----------
 // Vector maps in local metres (north up), sized for an A4 page at 180 mm wide.
-function svgMap(R, planets, cats, scaleKm) {
+function svgMap(R, planets, cats, scaleKm, maxRoad = 2) {
   const W = 2 * R, k = W / 180, f = n => n.toFixed(0);
   const P = ll => { const [x, y] = xy(ll); return [x, -y]; };
   const pts = list => list.map(ll => P(ll).map(f).join(' ')).join('L');
@@ -844,7 +846,7 @@ function svgMap(R, planets, cats, scaleKm) {
   const S = state.sun ? P(state.sun) : null, SK = P(state.sun || EARTH);
   let g = `<rect x="${-R}" y="${-R}" width="${W}" height="${W}" fill="#e4e3de"/>`;
   g += `<path d="M${pts(BOUND)}Z" fill="#f7f6f1" stroke="#7d869c" stroke-width="${f(.35 * k)}"/>`;
-  for (const [rk, line] of OSM.roads) if (rk <= 2) g += `<path d="M${pts(line)}" fill="none" stroke="#c4c7cf" stroke-width="${f([.5, .4, .25][rk] * k)}"/>`;
+  for (const [rk, line] of OSM.roads) if (rk <= maxRoad) g += `<path d="M${pts(line)}" fill="none" stroke="#c4c7cf" stroke-width="${f([.6, .5, .35, .25][rk] * k)}"/>`;
   if (state.extras.kuiper && R > 40000) { const c = EXTRAS[1].cl; g += `<path d="${annulusD(SK, 30 * M_PER_AU, 50 * M_PER_AU)}" fill="${c}" fill-opacity=".08" fill-rule="evenodd" stroke="${c}" stroke-width="${f(.25 * k)}"/>`; }
   for (const p of planets) {
     const c = p.cl || p.c;
@@ -874,7 +876,7 @@ function svgMap(R, planets, cats, scaleKm) {
   }
   const bx = -R + 6 * k, by = R - 7 * k, bl = scaleKm * 1000;
   g += `<rect x="${f(bx)}" y="${f(by)}" width="${f(bl)}" height="${f(1.2 * k)}" fill="#1c2130"/><rect x="${f(bx + bl / 2)}" y="${f(by)}" width="${f(bl / 2)}" height="${f(1.2 * k)}" fill="#fff" stroke="#1c2130" stroke-width="${f(.2 * k)}"/>`;
-  g += txt(bx, by - 1.3 * k, '0', 2.3, 500, 'middle') + txt(bx + bl, by - 1.3 * k, `${scaleKm} km`, 2.3, 600, 'middle');
+  g += txt(bx, by - 1.3 * k, '0', 2.3, 500, 'middle') + txt(bx + bl, by - 1.3 * k, scaleKm < 1 ? `${scaleKm * 1000} m` : `${scaleKm} km`, 2.3, 600, 'middle');
   const nx = R - 9 * k, ny = -R + 7 * k;
   g += `<path d="M${f(nx)} ${f(ny)}l${f(2 * k)} ${f(6 * k)}l${f(-2 * k)} ${f(-1.6 * k)}l${f(-2 * k)} ${f(1.6 * k)}Z" fill="#1c2130"/>` + txt(nx, ny + 10 * k, 'N', 3, 700, 'middle');
   return `<svg viewBox="${-R} ${-R} ${W} ${W}" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="fr${R}"><rect x="${-R}" y="${-R}" width="${W}" height="${W}"/></clipPath></defs><g clip-path="url(#fr${R})" font-family="Figtree, system-ui, sans-serif">${g}</g></svg>`;
@@ -897,7 +899,11 @@ function buildPrint() {
     <div class="big">${svgMap(Rbig, P, ['ped', 'town', 'pue'], 5)}</div>
     ${legend}
   </section>`;
-  const inner = P.filter(p => p.s[1] < 6);
+  const ex = EXTRAS.filter(x => x.id !== 'pluton' && state.extras[x.id]);
+  const exT = ex.length ? `<div class="keep"><h2>Más allá de los planetas</h2><table><thead><tr><th>Región</th><th>UA</th><th>Distancia a escala</th><th>Nota</th></tr></thead><tbody>${ex.map(x =>
+    `<tr><td>${x.n}</td><td>${fmtN(x.au[0], 0)}–${fmtN(x.au[1], 0)}</td><td>${fmtDist(x.au[0] * M_PER_AU)}–${fmtDist(x.au[1] * M_PER_AU)}</td><td class="t">${x.sub}</td></tr>`).join('')}</tbody></table></div>` : '';
+  const inner = P.filter(p => p.s[1] < 2);   // Mercurio, Venus, Marte
+  const Rin = Math.max(...inner.map(p => Math.max(p.e[1] * M_PER_AU, p.s[1] * M_PER_AU + SUN_MAX))) + 150;
   const loc = (n, ll, extra) => `<tr><td>${n}</td><td>${ll[0].toFixed(6)}</td><td>${ll[1].toFixed(6)}</td>${extra}</tr>`;
   let rows = loc('Tierra', EARTH, '<td>—</td><td>—</td><td class="t">Torre del Castillo</td>')
     + loc('Luna', MOON, `<td>${fmtDist(dist(xy(MOON), [0, 0]))}</td><td>—</td><td class="t">Iglesia de Santiago</td>`)
@@ -911,18 +917,16 @@ function buildPrint() {
     rows += loc(p.n, ll, `<td class="${r.inE ? 'y' : 'n'}">${fmtDist(r.dE)}</td>${state.sun ? `<td class="${r.inS ? 'y' : 'n'}">${fmtDist(r.dS)}</td>` : '<td>—</td>'}<td class="t ${ok ? 'y' : 'n'}">${st}${r.muni ? '' : ' · fuera del término'}</td>`);
   }
   const pg2 = `<section class="pp">
-    <h2>El centro del sistema</h2>
-    <p>El Sol, Mercurio, Venus, Marte y Júpiter quedan a pocos kilómetros del Castillo.</p>
-    <div class="inset">${svgMap(Math.max(...inner.map(p => p.s[1] * M_PER_AU)) + 1500, inner, ['ped', 'town', 'arq', 'bod', 'pico'], 1)}</div>
+    <h2>El sistema solar interior</h2>
+    <p>El Sol, Mercurio, Venus, la Tierra y Marte caben en unos 2,5 km alrededor del Castillo.</p>
+    <div class="inset${ex.length ? ' compact' : ''}">${svgMap(Rin, inner, ['ped', 'town', 'arq', 'bod', 'pico', 'cas'], .5, 3)}</div>
     <h2>Ubicación de los astros</h2>
     <table><thead><tr><th>Astro</th><th>Latitud</th><th>Longitud</th><th>A la Tierra</th><th>Al Sol</th><th>Estado</th></tr></thead><tbody>${rows}</tbody></table>
+    ${exT}
   </section>`;
   const dRows = [...P, SUN, MOONB].map(b => `<tr><td>${b.n}</td><td>${au(b.e[0])}</td><td>${cm(b.e[0])}</td><td>${kmv(b.e[0])}</td><td>${au(b.e[1])}</td><td>${cm(b.e[1])}</td><td>${kmv(b.e[1])}</td></tr>`).join('');
   const oRows = [PLANETS[0], PLANETS[1], { n: 'Tierra', s: SUN.e }, ...P.slice(2)].map(b => `<tr><td>${b.n}</td><td>${au(b.s[0])}</td><td>${kmv(b.s[0])}</td><td>${au(b.s[1])}</td><td>${kmv(b.s[1])}</td></tr>`).join('');
   const sRows = allSizes().map(b => `<tr><td>${b.n}</td><td>${b.d.toLocaleString('es-ES')}</td><td>${fmtLen(sizeU(b))}</td><td>${fmtLen(sizeP(b))}</td><td class="t">${LIKE[b.id]}</td></tr>`).join('');
-  const ex = EXTRAS.filter(x => x.id !== 'pluton' && state.extras[x.id]);
-  const exT = ex.length ? `<h2>Más allá de los planetas</h2><table><thead><tr><th>Región</th><th>UA</th><th>Distancia a escala</th><th>Nota</th></tr></thead><tbody>${ex.map(x =>
-    `<tr><td>${x.n}</td><td>${fmtN(x.au[0], 0)}–${fmtN(x.au[1], 0)}</td><td>${fmtDist(x.au[0] * M_PER_AU)}–${fmtDist(x.au[1] * M_PER_AU)}</td><td class="t">${x.sub}</td></tr>`).join('')}</tbody></table>` : '';
   const pg3 = `<section class="pp">
     <h2>Distancia de los planetas a la Tierra</h2>
     <table><thead><tr><th>Astro</th><th>Mínima (UA)</th><th>Plano (cm)</th><th>Terreno</th><th>Máxima (UA)</th><th>Plano (cm)</th><th>Terreno</th></tr></thead><tbody>${dRows}</tbody></table>
@@ -931,7 +935,6 @@ function buildPrint() {
     <h2>Tamaño de los astros</h2>
     <table><thead><tr><th>Astro</th><th>Diámetro (km)</th><th>Escala única</th><th>Propuesta</th><th>Se parece a</th></tr></thead><tbody>${sRows}</tbody></table>
     <p class="sub">Escala única: la misma que las distancias (1 UA ≈ 926 m). Propuesta: Mercurio = 0,5 cm y los demás en proporción.</p>
-    ${exT}
     <p class="foot-p">Distancias a la Tierra: propuesta original, con Mercurio corregido a 2,04 cm y la Luna a 0,00238 UA. Perihelio y afelio: NASA Planetary Fact Sheet. Cartografía: © colaboradores de OpenStreetMap. Mapa interactivo: <a class="url" href="https://planetarium-jumillense.vercel.app">https://planetarium-jumillense.vercel.app</a></p>
     <p class="credit-p">Una propuesta de <a href="https://carmen-marcos.art/">Carmen Marcos</a> · carmen-marcos.art</p>
   </section>`;
