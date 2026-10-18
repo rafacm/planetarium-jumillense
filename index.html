@@ -882,9 +882,10 @@ function svgMap(R, planets, cats, scaleKm, maxRoad = 2) {
   return `<svg viewBox="${-R} ${-R} ${W} ${W}" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="fr${R}"><rect x="${-R}" y="${-R}" width="${W}" height="${W}"/></clipPath></defs><g clip-path="url(#fr${R})" font-family="Figtree, system-ui, sans-serif">${g}</g></svg>`;
 }
 function buildPrint() {
-  const P = shown(), au = v => v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: v < .01 ? 5 : 4 }), cm = v => fmtN(v / .27), kmv = v => fmtDist(v * M_PER_AU);
+  // The printout covers the eight planets only.
+  const P = PLANETS.filter(p => !p.extra), au = v => v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: v < .01 ? 5 : 4 }), cm = v => fmtN(v / .27), kmv = v => fmtDist(v * M_PER_AU);
   const today = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
-  const Rbig = Math.max(...P.map(p => p.e[1] * M_PER_AU), state.extras.kuiper ? 50 * M_PER_AU + 930 : 0) + 1200;
+  const Rbig = Math.max(...P.map(p => p.e[1] * M_PER_AU)) + 1200;
   const legend = `<div class="legend-p"><span><i class="k" style="border:.3mm dashed #3c4357"></i>Distancia a la Tierra (mín.–máx.)</span>
     <span><i class="k" style="background:#3c435722"></i>Órbita alrededor del Sol</span><span><i class="k" style="background:#3c435777;border:.2mm solid #3c4357"></i>Zona ideal</span>
     ${P.map(p => `<span><i class="dotp" style="background:${p.cl}"></i>${p.n}</span>`).join('')}</div>`;
@@ -926,7 +927,7 @@ function buildPrint() {
   </section>`;
   const dRows = [...P, SUN, MOONB].map(b => `<tr><td>${b.n}</td><td>${au(b.e[0])}</td><td>${cm(b.e[0])}</td><td>${kmv(b.e[0])}</td><td>${au(b.e[1])}</td><td>${cm(b.e[1])}</td><td>${kmv(b.e[1])}</td></tr>`).join('');
   const oRows = [PLANETS[0], PLANETS[1], { n: 'Tierra', s: SUN.e }, ...P.slice(2)].map(b => `<tr><td>${b.n}</td><td>${au(b.s[0])}</td><td>${kmv(b.s[0])}</td><td>${au(b.s[1])}</td><td>${kmv(b.s[1])}</td></tr>`).join('');
-  const sRows = allSizes().map(b => `<tr><td>${b.n}</td><td>${b.d.toLocaleString('es-ES')}</td><td>${fmtLen(sizeU(b))}</td><td>${fmtLen(sizeP(b))}</td><td class="t">${LIKE[b.id]}</td></tr>`).join('');
+  const sRows = allSizes().filter(b => b.id !== 'pluton').map(b => `<tr><td>${b.n}</td><td>${b.d.toLocaleString('es-ES')}</td><td>${fmtLen(sizeU(b))}</td><td>${fmtLen(sizeP(b))}</td><td class="t">${LIKE[b.id]}</td></tr>`).join('');
   const pg3 = `<section class="pp">
     <h2>Distancia de los planetas a la Tierra</h2>
     <table><thead><tr><th>Astro</th><th>Mínima (UA)</th><th>Plano (cm)</th><th>Terreno</th><th>Máxima (UA)</th><th>Plano (cm)</th><th>Terreno</th></tr></thead><tbody>${dRows}</tbody></table>
