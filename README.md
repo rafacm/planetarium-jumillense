@@ -30,3 +30,11 @@ compartirlas, usa el botón «Copiar todas las ubicaciones».
 - Distancias a la Tierra: propuesta original del proyecto.
 - Perihelio y afelio: NASA Planetary Fact Sheet.
 - Cartografía: © colaboradores de OpenStreetMap (ODbL).
+
+## Licencia
+
+Una propuesta de [Carmen Marcos](https://carmen-marcos.art/).
+
+El código está bajo la [licencia MIT](LICENSE), © 2026 Carmen Marcos y Rafael
+Cordones. Los datos de OpenStreetMap incluidos en la página mantienen su propia
+licencia (ODbL 1.0).
