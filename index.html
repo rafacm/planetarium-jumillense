@@ -172,6 +172,7 @@ svg.lineup { width: 100%; height: auto; display: block; margin-bottom: 8px; }
 #print th:first-child, #print td:first-child { text-align: left; font-family: var(--body); font-size: 8.5pt; }
 #print td.t { font-family: var(--body); text-align: left; }
 #print .y { color: #23824d; } #print .n { color: #bb3c2a; }
+#print svg.shp { width: 3.2mm; height: 3.2mm; margin-right: 1.5mm; vertical-align: -.6mm; display: inline-block; border: 0; }
 #print .dotp { display: inline-block; width: 2.6mm; height: 2.6mm; border-radius: 50%; margin-right: 1.5mm; vertical-align: -.3mm; }
 #print a.url { color: inherit; font-weight: 700; text-decoration: none; white-space: nowrap; }
 #print .credit-p { font-size: 10.5pt; margin-top: 3mm; }
@@ -925,6 +926,19 @@ document.getElementById('resetBtn').onclick = e => {
 };
 
 // ---------- print (A4) ----------
+// Place categories get their own shape on paper so they never read as planets (which are round).
+function placeShape(c, x, y, r, sw) {
+  const col = CATS[c].cl, n = v => v.toFixed(1);
+  if (c === 'ped') return `<rect x="${n(x - r)}" y="${n(y - r)}" width="${n(2 * r)}" height="${n(2 * r)}" fill="${col}" stroke="#fff" stroke-width="${n(sw)}"/>`;
+  if (c === 'pue') return `<rect x="${n(x - r)}" y="${n(y - r)}" width="${n(2 * r)}" height="${n(2 * r)}" fill="#fff" stroke="${col}" stroke-width="${n(sw * 2)}"/>`;
+  if (c === 'cas') return `<rect x="${n(x - r * .7)}" y="${n(y - r * .7)}" width="${n(1.4 * r)}" height="${n(1.4 * r)}" fill="${col}"/>`;
+  if (c === 'arq') return `<path d="M${n(x)} ${n(y - r * 1.3)}L${n(x + r * 1.1)} ${n(y)}L${n(x)} ${n(y + r * 1.3)}L${n(x - r * 1.1)} ${n(y)}Z" fill="${col}" stroke="#fff" stroke-width="${n(sw)}"/>`;
+  if (c === 'bod') return `<path d="M${n(x - r * 1.2)} ${n(y - r)}L${n(x + r * 1.2)} ${n(y - r)}L${n(x)} ${n(y + r * 1.2)}Z" fill="${col}" stroke="#fff" stroke-width="${n(sw)}"/>`;
+  if (c === 'pico') return `<path d="M${n(x)} ${n(y - r * 1.2)}L${n(x + r * 1.2)} ${n(y + r)}L${n(x - r * 1.2)} ${n(y + r)}Z" fill="${col}" stroke="#fff" stroke-width="${n(sw)}"/>`;
+  if (c === 'obs') { let d = ''; for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * .6 : r * 1.5; d += (i ? 'L' : 'M') + n(x + rr * Math.cos(a)) + ' ' + n(y + rr * Math.sin(a)); } return `<path d="${d}Z" fill="${col}" stroke="#fff" stroke-width="${n(sw)}"/>`; }
+  return '';
+}
+const shapeKey = c => `<svg class="shp" viewBox="-6 -6 12 12" aria-hidden="true">${placeShape(c, 0, 0, 3.4, .6)}</svg>`;
 // Vector maps in local metres (north up), sized for an A4 page at 180 mm wide.
 function svgMap(R, planets, cats, scaleKm, maxRoad = 2, pointers = false) {
   const W = 2 * R, k = W / 180, f = n => n.toFixed(0);
@@ -960,7 +974,7 @@ function svgMap(R, planets, cats, scaleKm, maxRoad = 2, pointers = false) {
     if (on) { host[on.p.id] = host[on.p.id] || q.n; continue; }
     if (q.c === 'town') { g += txt(x - 3 * k, y + 4 * k, q.n, 3.6, 600, 'end'); continue; }
     const C = CATS[q.c];
-    g += `<circle cx="${f(x)}" cy="${f(y)}" r="${f(.7 * k)}" fill="${C.cl}" stroke="#fff" stroke-width="${f(.2 * k)}"/>`;
+    g += placeShape(q.c, x, y, .75 * k, .2 * k);
     g += txt(x + 1.3 * k, y + .9 * k, q.n, q.c === 'ped' || q.big ? 2.5 : 2.1, q.c === 'ped' || q.big ? 600 : 400);
     if (q.c === 'ped') mark(x, y, q.n, 2.5);
   }
@@ -1011,11 +1025,10 @@ function buildPrint() {
   const today = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
   const Rbig = Math.max(...P.map(p => p.e[1] * M_PER_AU)) + 1200;
   const dot = (c, n) => `<span><i class="dotp" style="background:${c}"></i>${n}</span>`;
-  const legendFor = (planets, extra = '') => `<div class="legend-p"><span><i class="k" style="border:.3mm dashed #3c4357"></i>Distancia a la Tierra (mín.–máx.)</span>
-    <span><i class="k" style="background:#3c435722"></i>Órbita alrededor del Sol</span><span><i class="k" style="background:#3c435777;border:.2mm solid #3c4357"></i>Zona ideal</span>
-    <span><i class="k" style="background:${SUN.c}88;border:.2mm solid ${SUN.cl};border-radius:2mm"></i>Anillo del Sol</span>
-    ${dot(SUN.c, 'Sol')}${dot(EARTHB.cl, 'Tierra')}${planets.map(p => dot(p.cl, p.n)).join('')}${extra}</div>`;
-  const legend = legendFor(P, dot(CATS.ped.cl, 'Pedanía'));
+  const place = (c, n) => `<span>${shapeKey(c)}${n}</span>`;
+  const legendFor = (planets, extra = '') => `<div class="legend-p">${dot(SUN.c, 'Sol')}${dot(EARTHB.cl, 'Tierra')}${planets.map(p => dot(p.cl, p.n)).join('')}${extra}</div>`;
+  const closeKey = place('ped', 'Pedanía') + place('cas', 'Caserío') + place('arq', 'Arqueología') + place('bod', 'Bodega') + place('pico', 'Pico') + (OSM.pts.some(q => q.c === 'obs') ? place('obs', 'Observatorio') : '') + `<span><b style="color:${CATS.ped.cl}">▶</b>Dirección a una pedanía fuera del mapa</span>`;
+  const legend = legendFor(P, place('ped', 'Pedanía') + place('pue', 'Pueblo vecino'));
   const pg1 = `<section class="pp">
     <header><h1>Planetarium Jumillense</h1><p class="sub">El sistema solar a escala sobre el término municipal de Jumilla<br>${today}<br><a class="url" href="https://planetarium-jumillense.vercel.app">https://planetarium-jumillense.vercel.app</a></p></header>
     <div class="intro">
@@ -1052,7 +1065,7 @@ function buildPrint() {
     <h2>El sistema solar interior</h2>
     <p>El Sol, Mercurio, Venus, la Tierra y Marte caben en unos 2,5 km alrededor del Castillo.</p>
     <div class="inset${ex.length ? ' compact' : ''}">${svgMap(Rin, inner, ['ped', 'town', 'arq', 'bod', 'pico', 'cas'], .5, 4, true)}</div>
-    ${legendFor(inner, dot(CATS.ped.cl, 'Pedanía') + dot(CATS.bod.cl, 'Bodega') + dot(CATS.arq.cl, 'Arqueología') + dot(CATS.pico.cl, 'Pico') + `<span><b style="color:${CATS.ped.cl}">▶</b>Dirección a una pedanía fuera del mapa</span>`)}
+    ${legendFor(inner, closeKey)}
     <h2>Ubicación de los astros</h2>
     <table><thead><tr><th>Astro</th><th>Latitud</th><th>Longitud</th><th>A la Tierra</th><th>Al Sol</th><th>Estado</th></tr></thead><tbody>${rows}</tbody></table>
     ${exT}
@@ -1064,7 +1077,7 @@ function buildPrint() {
     <h2>Jumilla y La Alquería</h2>
     <p>El casco urbano hasta La Alquería, con las bandas de Mercurio a Júpiter.</p>
     <div class="inset">${svgMap(Rtown, mid, ['ped', 'town', 'arq', 'bod', 'pico', 'cas'], 1, 4, true)}</div>
-    ${legendFor(mid, dot(CATS.ped.cl, 'Pedanía') + dot(CATS.bod.cl, 'Bodega') + dot(CATS.arq.cl, 'Arqueología') + dot(CATS.pico.cl, 'Pico') + `<span><b style="color:${CATS.ped.cl}">▶</b>Dirección a una pedanía fuera del mapa</span>`)}
+    ${legendFor(mid, closeKey)}
     <div class="keep"><h2>Distancia de los planetas a la Tierra</h2>
     <table><thead><tr><th>Astro</th><th>Mínima (UA)</th><th>Plano (cm)</th><th>Terreno</th><th>Máxima (UA)</th><th>Plano (cm)</th><th>Terreno</th></tr></thead><tbody>${dRows}</tbody></table></div>
     <div class="keep"><h2>Órbita alrededor del Sol</h2>
