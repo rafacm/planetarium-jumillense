@@ -252,7 +252,7 @@ svg.lineup { width: 100%; height: auto; display: block; margin-bottom: 8px; }
   <aside class="panel">
     <header>
       <h1>Planetarium Jumillense</h1>
-      <p>El sistema solar a escala sobre el término de Jumilla. La Tierra está en la torre del Castillo. Coloca primero el Sol en su anillo y después cada planeta donde caiga en su zona.</p>
+      <p>El sistema solar a escala sobre el término de Jumilla. La Tierra está en la torre del Castillo. El Sol empieza junto a la Plaza Rey Don Pedro I y se puede mover por su anillo. Coloca cada planeta donde caiga en su zona.</p>
       <div class="scale"><span>1 cm del plano = 250 m</span><span>0,27 UA = 1 cm</span><span>1 UA ≈ 926 m</span></div>
       <button type="button" class="btn printbtn" id="printBtn"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/></svg>Imprimir en A4</button>
     </header>
@@ -357,12 +357,14 @@ const CATS = {
 
 // ---------- state ----------
 const DOC_NEPTUNE = [38.338739, -1.083809];   // point given in the original proposal
+// The Sun starts on its ring at the point nearest the fountain of Plaza Rey Don Pedro I (845 m from the tower, 65 m inside the ring).
+const SUN_PLAZA = [38.473443, -1.328548];
 function defaultState() {
-  return { sun: null, placed: {}, scale: 'u', mode: 'all',
+  return { sun: clampSun(...SUN_PLAZA), placed: {}, scale: 'u', mode: 'all',
            show: { E: true, S: true, Z: true }, base: 'light', poi: { ped: true, cas: true, arq: true, bod: true, pico: true, pue: true }, sel: null,
            extras: { pluton: false, kuiper: false, helio: false, oort: false, proxima: false } };
 }
-const KEY = 'planetarium-jumilla-v3';
+const KEY = 'planetarium-jumilla-v4';
 let state = defaultState();
 try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s && s.placed) { const d = defaultState(); state = Object.assign(d, s, { poi: Object.assign(d.poi, s.poi), extras: Object.assign(d.extras, s.extras) }); } } catch (e) {}
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
@@ -782,6 +784,7 @@ function renderBodies() {
       <span class="rng">a ${km(SUN.e[0])}–${km(SUN.e[1])} km de la Tierra</span></button>`;
   if (state.sel === 'sol') h += sun ? `<div class="detail" style="--c:${col(SUN)}">
       <p>Arrastra el Sol por su anillo dorado alrededor del Castillo. Las órbitas de todos los planetas se mueven con él, y con ellas las zonas ideales.</p>
+      <div class="places"><button type="button" data-act="sunplaza" data-id="sol"><span class="dot" style="background:${col(SUN)}"></span>Plaza Rey Don Pedro I</button></div>
       <dl class="kv"><dt>Latitud</dt><dd>${sun[0].toFixed(6)}</dd><dt>Longitud</dt><dd>${sun[1].toFixed(6)}</dd></dl>
       <div class="actions"><button type="button" class="btn primary" data-act="place" data-id="sol">Mover</button>
       <button type="button" class="btn" data-act="zoom" data-id="sol">Ver a tamaño real</button>
@@ -836,6 +839,7 @@ document.getElementById('bodies').addEventListener('click', e => {
   if (b) {
     const id = b.dataset.id, act = b.dataset.act, p = PLANETS.find(q => q.id === id);
     if (act === 'place') startPlacing(id);
+    if (act === 'sunplaza') { state.sun = clampSun(...SUN_PLAZA); save(); render(); map.setView(state.sun, Math.max(map.getZoom(), 15)); }
     if (act === 'remove') { if (id === 'sol') state.sun = null; else delete state.placed[id]; save(); render(); }
     if (act === 'poi') { state.placed[id] = [+b.dataset.la, +b.dataset.lo]; save(); render(); map.setView(state.placed[id], Math.max(map.getZoom(), 13)); }
     if (act === 'zoom') {
