@@ -21,6 +21,7 @@
   --ink: #ebe7dc;
   --muted: #8f97ab;
   --sun: #f2b84b;
+  --sun-ink: #f2b84b;
   --ok: #6fcf97;
   --warn: #e9b44c;
   --bad: #ef7d6d;
@@ -29,6 +30,9 @@
   --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
   color-scheme: dark;
 }
+/* Light UI: used with every light base map; the dark map keeps the night palette above. */
+.app.light-ui { --panel: #f7f6f2; --raise: #ecebe4; --line: #d9d7ce; --ink: #1d2230; --muted: #5d6476; --sun-ink: #8f6206; --ok: #23824d; --warn: #9a6a07; --bad: #bb3c2a; color-scheme: light; color: var(--ink); }
+body:has(.light-ui) { background: #f7f6f2; }
 html, body { height: 100%; }
 body { background: var(--night); color: var(--ink); font-family: var(--body); font-size: 14px; line-height: 1.45; }
 * { box-sizing: border-box; }
@@ -48,7 +52,7 @@ button { font: inherit; color: inherit; }
 
 header h1 { font-family: var(--display); font-weight: 400; font-size: 30px; line-height: 1.05; margin: 0; letter-spacing: .005em; text-wrap: balance; }
 header p { margin: 6px 0 0; color: var(--muted); }
-.scale { font-family: var(--mono); font-size: 12px; color: var(--sun); margin-top: 10px; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.scale { font-family: var(--mono); font-size: 12px; color: var(--sun-ink); margin-top: 10px; display: flex; flex-wrap: wrap; gap: 4px 14px; }
 
 h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); font-weight: 600; margin: 0 0 10px; }
 section { min-width: 0; }
@@ -98,12 +102,12 @@ table.sizes th:first-child, table.sizes td:first-child { text-align: left; }
 table.sizes td { padding: 5px 6px; text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent); }
 table.sizes td:first-child { font-family: var(--body); }
 table.sizes td.like { font-family: var(--body); color: var(--muted); text-align: left; }
-table.sizes .on { color: var(--sun); }
+table.sizes .on { color: var(--sun-ink); }
 svg.lineup { width: 100%; height: auto; display: block; margin-bottom: 8px; }
 .note { color: var(--muted); font-size: 12.5px; margin: 8px 0 0; }
 .foot { color: var(--muted); font-size: 12px; border-top: 1px solid var(--line); padding-top: 14px; }
 .foot p { margin: 0 0 6px; }
-.copyfallback { width: 100%; height: 120px; margin-top: 8px; background: var(--night); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; font-family: var(--mono); font-size: 11.5px; padding: 8px; }
+.copyfallback { width: 100%; height: 120px; margin-top: 8px; background: var(--raise); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; font-family: var(--mono); font-size: 11.5px; padding: 8px; }
 
 .banner { position: absolute; z-index: 1001; left: 50%; transform: translateX(-50%); top: max(12px, env(safe-area-inset-top, 0px)); background: var(--sun); color: #1b1406; padding: 7px 14px; border-radius: 999px; font-weight: 600; font-size: 13px; box-shadow: 0 4px 16px rgba(0,0,0,.4); max-width: calc(100% - 32px); text-align: center; }
 .banner button { background: none; border: 0; text-decoration: underline; cursor: pointer; font-weight: 600; padding: 0 0 0 8px; color: inherit; }
@@ -142,8 +146,8 @@ svg.lineup { width: 100%; height: auto; display: block; margin-bottom: 8px; }
 .leaflet-bar a + a { border-top: 1px solid var(--line); }
 .leaflet-bar a:hover { background: var(--raise); }
 .leaflet-bar a.leaflet-disabled { color: var(--line); cursor: default; }
-.leaflet-control-scale-line { border: 1.5px solid var(--muted); border-top: 0; color: var(--ink); font-family: var(--mono); font-size: 11px; padding: 0 5px; background: color-mix(in srgb, var(--night) 70%, transparent); white-space: nowrap; box-sizing: border-box; }
-.leaflet-control-attribution { background: color-mix(in srgb, var(--night) 75%, transparent); color: var(--muted); font-size: 10.5px; padding: 1px 6px; margin: 0 !important; }
+.leaflet-control-scale-line { border: 1.5px solid var(--muted); border-top: 0; color: var(--ink); font-family: var(--mono); font-size: 11px; padding: 0 5px; background: color-mix(in srgb, var(--panel) 80%, transparent); white-space: nowrap; box-sizing: border-box; }
+.leaflet-control-attribution { background: color-mix(in srgb, var(--panel) 80%, transparent); color: var(--muted); font-size: 10.5px; padding: 1px 6px; margin: 0 !important; }
 .leaflet-control-attribution a { color: var(--muted); }
 .leaflet-tooltip { position: absolute; pointer-events: none; white-space: nowrap; user-select: none; }
 .lbl { color: var(--muted); font-size: 11px; text-shadow: 0 0 3px var(--night), 0 0 3px var(--night), 0 0 2px var(--night); padding-left: 7px; margin-top: -8px; }
@@ -370,6 +374,7 @@ function applyBase() {
   roadLines.forEach((l, rk) => l.setStyle({ color: light ? ROAD_L[rk] : ROAD[rk][0] }));
   c.style.background = light ? '#dddcd6' : '';
   c.classList.toggle('light', light);
+  document.getElementById('app').classList.toggle('light-ui', light);
   for (const [m, k] of poiMarkers) m.setStyle({ fillColor: light ? CATS[k].cl : CATS[k].c, color: light ? '#ffffff' : '#0b0f1a' });
   sunRing.setStyle({ color: col(SUN), fillColor: col(SUN) });
   for (const id in planetMarkers) planetMarkers[id].setIcon(pinIcon(PLANETS.find(q => q.id === id)));
@@ -508,27 +513,27 @@ function renderBodies() {
   const S = xy(state.sun), dSE = Math.hypot(S[0], S[1]);
   let h = `
     <button type="button" class="row" data-id="sol" aria-expanded="${state.sel === 'sol'}">
-      <span class="ball" style="background:${SUN.c}"></span><span class="nm">Sol</span><span class="pill ok">${fmtN(dSE, 0)} m</span>
+      <span class="ball" style="background:${col(SUN)}"></span><span class="nm">Sol</span><span class="pill ok">${fmtN(dSE, 0)} m</span>
       <span class="rng">a ${km(SUN.e[0])}–${km(SUN.e[1])} km de la Tierra</span></button>`;
-  if (state.sel === 'sol') h += `<div class="detail" style="--c:${SUN.c}">
+  if (state.sel === 'sol') h += `<div class="detail" style="--c:${col(SUN)}">
       <p>Arrastra el Sol por su anillo dorado alrededor del Castillo. Las órbitas de todos los planetas se mueven con él, y con ellas las zonas ideales.</p>
       <dl class="kv"><dt>Latitud</dt><dd>${state.sun[0].toFixed(6)}</dd><dt>Longitud</dt><dd>${state.sun[1].toFixed(6)}</dd></dl>
       <div class="actions"><button type="button" class="btn" data-act="zoom" data-id="sol">Ver a tamaño real</button>
       <a class="btn" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${state.sun[0].toFixed(6)},${state.sun[1].toFixed(6)}">Abrir en Google Maps</a></div></div>`;
   h += `<button type="button" class="row" data-id="tierra" aria-expanded="${state.sel === 'tierra'}">
-      <span class="ball" style="background:${EARTHB.c}"></span><span class="nm">Tierra y Luna</span><span class="pill ok">Castillo</span>
+      <span class="ball" style="background:${col(EARTHB)}"></span><span class="nm">Tierra y Luna</span><span class="pill ok">Castillo</span>
       <span class="rng">Torre del Castillo · Luna en la Iglesia de Santiago</span></button>`;
-  if (state.sel === 'tierra') h += `<div class="detail" style="--c:${EARTHB.c}">
+  if (state.sel === 'tierra') h += `<div class="detail" style="--c:${col(EARTHB)}">
       <p>A escala, la Luna estaría a solo ${fmtN(MOONB.e[0] * M_PER_AU, 1)}–${fmtN(MOONB.e[1] * M_PER_AU, 1)} m de la Tierra. La propuesta la sitúa en las ruinas de la Iglesia de Santiago, a ${fmtN(dist(xy(MOON), [0, 0]), 0)} m, por su valor histórico.</p>
       <div class="actions"><button type="button" class="btn" data-act="zoom" data-id="tierra">Ver a tamaño real</button></div></div>`;
   for (const p of PLANETS) {
     const st = statusOf(p), open = state.sel === p.id;
     h += `<button type="button" class="row" data-id="${p.id}" aria-expanded="${open}">
-      <span class="ball" style="background:${p.c}"></span><span class="nm">${p.n}</span><span class="pill ${st.cls}">${st.t}</span>
+      <span class="ball" style="background:${col(p)}"></span><span class="nm">${p.n}</span><span class="pill ${st.cls}">${st.t}</span>
       <span class="rng">Tierra ${km(p.e[0])}–${km(p.e[1])} km · Sol ${km(p.s[0])}–${km(p.s[1])} km</span></button>`;
     if (!open) continue;
     const ll = state.placed[p.id];
-    let d = `<div class="detail" style="--c:${p.c}">`;
+    let d = `<div class="detail" style="--c:${col(p)}">`;
     if (ll) {
       const r = st.r, y = b => b ? 'y' : 'n', mk = b => b ? '✓' : '✗';
       d += `<dl class="kv">
@@ -547,7 +552,7 @@ function renderBodies() {
     }
     const pl = placesInZone(p);
     d += `<div><h2 style="margin-bottom:8px">Lugares en la zona ideal (${pl.length})</h2>`;
-    d += pl.length ? `<div class="places">${pl.map(o => `<button type="button" data-act="poi" data-id="${p.id}" data-la="${o.q.la}" data-lo="${o.q.lo}" title="Colocar ${esc(p.n)} aquí"><span class="dot" style="background:${CATS[o.q.c].c}"></span>${esc(o.q.n)}</button>`).join('')}</div>`
+    d += pl.length ? `<div class="places">${pl.map(o => `<button type="button" data-act="poi" data-id="${p.id}" data-la="${o.q.la}" data-lo="${o.q.lo}" title="Colocar ${esc(p.n)} aquí"><span class="dot" style="background:${col(CATS[o.q.c])}"></span>${esc(o.q.n)}</button>`).join('')}</div>`
       : `<p>Ningún lugar del mapa cae en la zona ideal con el Sol donde está. Prueba a mover el Sol o elige un punto libre.</p>`;
     d += `</div></div>`;
     h += d;
@@ -588,14 +593,14 @@ function renderSizes() {
     : 'Escala de la propuesta: Mercurio mide 0,5 cm y los demás en proporción. Las proporciones entre astros son correctas, pero no coinciden con la escala de las distancias.';
   // proportional lineup
   const k = 78 / 142984, cy = 62, sunR = SUN.d / 2 * k;
-  let s = `<circle cx="${(26 - sunR).toFixed(1)}" cy="${cy}" r="${sunR.toFixed(1)}" fill="${SUN.c}" opacity=".9"/><text x="6" y="${cy + 4}" font-size="11" fill="#1b1406" font-weight="600">Sol</text>`;
+  let s = `<circle cx="${(26 - sunR).toFixed(1)}" cy="${cy}" r="${sunR.toFixed(1)}" fill="${col(SUN)}" opacity=".9"/><text x="6" y="${cy + 4}" font-size="11" fill="#1b1406" font-weight="600">Sol</text>`;
   let x = 40;
   const order = [PLANETS[0], PLANETS[1], EARTHB, PLANETS[2], PLANETS[3], PLANETS[4], PLANETS[5], PLANETS[6]];
   for (const b of order) {
     const r = Math.max(b.d / 2 * k, 1.1), cx = x + r;
-    if (b.id === 'saturno') s += `<ellipse cx="${cx}" cy="${cy}" rx="${r * 2.1}" ry="${r * .45}" fill="none" stroke="${b.c}" stroke-width="1.6" opacity=".7" transform="rotate(-18 ${cx} ${cy})"/>`;
-    s += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${b.c}"/>`;
-    s += `<text x="${cx}" y="${cy + 46}" font-size="10.5" fill="#8f97ab" text-anchor="end" transform="rotate(-45 ${cx} ${cy + 46})">${b.n}</text>`;
+    if (b.id === 'saturno') s += `<ellipse cx="${cx}" cy="${cy}" rx="${r * 2.1}" ry="${r * .45}" fill="none" stroke="${col(b)}" stroke-width="1.6" opacity=".7" transform="rotate(-18 ${cx} ${cy})"/>`;
+    s += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${col(b)}"/>`;
+    s += `<text x="${cx}" y="${cy + 46}" font-size="10.5" fill="var(--muted)" text-anchor="end" transform="rotate(-45 ${cx} ${cy + 46})">${b.n}</text>`;
     x += 2 * r + (b.id === 'saturno' ? 22 : r > 10 ? 12 : 13);
   }
   document.getElementById('lineup').innerHTML = s;
@@ -608,7 +613,7 @@ function renderControls() {
   document.getElementById('modeAll').setAttribute('aria-pressed', state.mode === 'all');
   document.getElementById('modeSel').setAttribute('aria-pressed', state.mode === 'sel');
   document.getElementById('poiToggles').innerHTML = Object.entries(CATS).map(([k, c]) =>
-    `<button type="button" class="chipbtn" data-poi="${k}" aria-pressed="${state.poi[k]}"><span class="dot" style="background:${c.c}"></span>${c.n}</button>`).join('');
+    `<button type="button" class="chipbtn" data-poi="${k}" aria-pressed="${state.poi[k]}"><span class="dot" style="background:${col(c)}"></span>${c.n}</button>`).join('');
   for (const k of Object.keys(CATS)) { if (state.poi[k]) map.addLayer(poiLayers[k]); else map.removeLayer(poiLayers[k]); }
 }
 for (const k of ['E', 'S', 'Z']) document.getElementById('show' + k).onchange = e => { state.show[k] = e.target.checked; save(); render(); };
