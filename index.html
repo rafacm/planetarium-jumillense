@@ -962,7 +962,7 @@ function svgMap(R, planets, cats, scaleKm, maxRoad = 2, pointers = false) {
     if (q.c === 'ped') mark(x, y, q.n, 2.5);
   }
   if (S) g += `<circle cx="${f(S[0])}" cy="${f(S[1])}" r="${f(1.6 * k)}" fill="${SUN.c}" stroke="${SUN.cl}" stroke-width="${f(.3 * k)}"/>` + txt(S[0], S[1] - 2.4 * k, 'Sol', 2.8, 700, 'middle');
-  g += `<circle r="${f(1.3 * k)}" fill="${EARTHB.cl}" stroke="#fff" stroke-width="${f(.3 * k)}"/>` + txt(2 * k, 3.2 * k, 'Tierra', 2.8, 700);
+  g += `<circle r="${f(1.3 * k)}" fill="${EARTHB.cl}" stroke="#fff" stroke-width="${f(.3 * k)}"/>` + (pointers ? txt(-2.2 * k, -1.4 * k, 'Tierra · Castillo', 2.8, 700, 'end') : txt(2 * k, 3.2 * k, 'Tierra', 2.8, 700));   // close-up maps name the castle, to the left where it stays clear
   for (const p of planets) {
     const ll = state.placed[p.id]; if (!ll) continue;
     const [x, y] = P(ll); if (!inFrame([x, y])) continue;
