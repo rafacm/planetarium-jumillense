@@ -687,8 +687,8 @@ document.getElementById('extras').addEventListener('change', e => {
   save(); render();
 });
 // ---------- Próxima Centauri: a space view past the edge of the map ----------
-// Distances in thousands of km, centred on the Earth. Side view: celestial north up.
-const PROX_KM = 268553 * M_PER_AU / 1000, MOON_KM = 384400, OORT_KM = 100000 * M_PER_AU / 1000, PROX_DEC = -62.7;
+// Distances in thousands of km, centred on the Earth. Próxima is drawn on the line to the Moon so the two distances compare at a glance.
+const PROX_KM = 268553 * M_PER_AU / 1000, MOON_KM = 384400, OORT_KM = 100000 * M_PER_AU / 1000;
 const space = document.createElement('div');
 space.className = 'space'; space.hidden = true;
 space.setAttribute('role', 'dialog'); space.setAttribute('aria-label', 'Próxima Centauri a escala');
@@ -696,30 +696,27 @@ map.getContainer().appendChild(space);
 L.DomEvent.disableClickPropagation(space); L.DomEvent.disableScrollPropagation(space);
 function spaceSVG() {
   const u = v => (v / 1000).toFixed(1);             // km → viewBox units (1 unit = 1000 km)
-  const a = PROX_DEC * Math.PI / 180, px = Math.cos(a) * PROX_KM / 1000, py = -Math.sin(a) * PROX_KM / 1000;
-  const moonA = 200 * Math.PI / 180, mx = Math.cos(moonA) * MOON_KM / 1000, my = Math.sin(moonA) * MOON_KM / 1000;
+  const moonA = 200 * Math.PI / 180, ca = Math.cos(moonA), sa = Math.sin(moonA);
+  const mx = ca * MOON_KM / 1000, my = sa * MOON_KM / 1000, px = ca * PROX_KM / 1000, py = sa * PROX_KM / 1000;
   let stars = '', seed = 7;
   const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   for (let i = 0; i < 160; i++) stars += `<circle cx="${(rnd() * 900 - 450).toFixed(0)}" cy="${(rnd() * 900 - 450).toFixed(0)}" r="${(rnd() * 1.3 + .3).toFixed(1)}" fill="#fff" opacity="${(rnd() * .5 + .15).toFixed(2)}"/>`;
   const lineLen = Math.hypot(px, py);
   return `<svg viewBox="-450 -430 900 860" xmlns="http://www.w3.org/2000/svg" font-family="Figtree, system-ui, sans-serif">
     ${stars}
-    <line x1="-440" y1="0" x2="440" y2="0" stroke="#3a4563" stroke-width="1" stroke-dasharray="2 6"/>
-    <text x="436" y="-8" fill="#8f97ab" font-size="13" text-anchor="end">ecuador celeste</text>
-    <text x="0" y="-410" fill="#8f97ab" font-size="13" text-anchor="middle">norte del cielo ↑</text>
-    <text x="0" y="424" fill="#8f97ab" font-size="13" text-anchor="middle">sur del cielo ↓</text>
     <circle r="${u(MOON_KM)}" fill="none" stroke="#cfd0d8" stroke-width="1.4" stroke-dasharray="5 6" opacity=".7"/>
     <circle r="${u(OORT_KM)}" fill="#a8b2d6" fill-opacity=".07" stroke="#a8b2d6" stroke-width="1.2" opacity=".8"/>
     <text x="0" y="${-OORT_KM / 1000 - 8}" fill="#c9cfe6" font-size="13" text-anchor="middle">Borde exterior de la nube de Oort · ${fmtN(OORT_KM, 0)} km</text>
     <circle cx="${mx.toFixed(1)}" cy="${my.toFixed(1)}" r="6" fill="#cfd0d8"/>
     <text x="${(mx + 12).toFixed(1)}" y="${(my - 10).toFixed(1)}" fill="#ebe7dc" font-size="15" font-weight="600">Luna · ${fmtN(MOON_KM, 0)} km</text>
+    <line x1="0" y1="0" x2="${mx.toFixed(1)}" y2="${my.toFixed(1)}" stroke="#cfd0d8" stroke-width="1.2" stroke-dasharray="3 5" opacity=".55"/>
     <line class="ray" x1="0" y1="0" x2="${px.toFixed(1)}" y2="${py.toFixed(1)}" stroke="#e8846b" stroke-width="2" stroke-dasharray="${lineLen.toFixed(0)}" stroke-dashoffset="${lineLen.toFixed(0)}"/>
     <circle r="${u(6371)}" fill="#2f7fd0"/><circle r="10" fill="none" stroke="#5fa8e8" stroke-width="1.5"/>
     <text x="16" y="-12" fill="#ebe7dc" font-size="15" font-weight="600">Tierra · Jumilla</text>
     <g class="star" transform="translate(${px.toFixed(1)} ${py.toFixed(1)})">
       <circle r="16" fill="#e8846b" opacity=".25" class="halo"/><circle r="7" fill="#ff9d7e"/>
-      <text x="14" y="5" fill="#ffd2c4" font-size="16" font-weight="700">Próxima Centauri</text>
-      <text x="14" y="24" fill="#ebe7dc" font-size="14">${fmtN(PROX_KM, 0)} km · ${Math.round(PROX_KM / MOON_KM * 100)} % del camino a la Luna</text>
+      <text x="0" y="38" fill="#ffd2c4" font-size="16" font-weight="700" text-anchor="middle">Próxima Centauri</text>
+      <text x="0" y="57" fill="#ebe7dc" font-size="14" text-anchor="middle">${fmtN(PROX_KM, 0)} km · ${Math.round(PROX_KM / MOON_KM * 100)} % del camino a la Luna</text>
     </g>
     <g transform="translate(-430 405)"><rect width="100" height="5" fill="#ebe7dc"/><text y="-7" fill="#ebe7dc" font-size="13">0</text><text x="100" y="-7" fill="#ebe7dc" font-size="13" text-anchor="middle">100.000 km</text></g>
   </svg>`;
@@ -728,10 +725,10 @@ function showProxima() {
   if (placing) stopPlacing();
   const reveal = () => {
     space.innerHTML = `<div class="space-head"><div><h3>Próxima Centauri a escala</h3>
-      <p>Si el Sol está a 926 m del Castillo, la estrella más cercana estaría a <b>${fmtN(PROX_KM, 0)} km</b> de la Tierra: el ${Math.round(PROX_KM / MOON_KM * 100)} % del camino a la Luna, en dirección al sur del cielo.</p></div>
+      <p>Si el Sol está a 926 m del Castillo, la estrella más cercana estaría a <b>${fmtN(PROX_KM, 0)} km</b> de la Tierra: el ${Math.round(PROX_KM / MOON_KM * 100)} % del camino a la Luna.</p></div>
       <button type="button" class="btn" id="spaceClose">Volver al mapa</button></div>
       <div class="space-fig">${spaceSVG()}</div>
-      <p class="space-note">Esquema a escala de distancias. La Tierra se dibuja a su tamaño real; la posición de la Luna en su órbita es orientativa.</p>`;
+      <p class="space-note">Esquema a escala de distancias. La Tierra se dibuja a su tamaño real. Próxima Centauri aparece en la línea hacia la Luna para comparar las dos distancias; su dirección real en el cielo es otra.</p>`;
     space.hidden = false;
     requestAnimationFrame(() => requestAnimationFrame(() => space.classList.add('on')));
     space.querySelector('#spaceClose').onclick = hideProxima;
