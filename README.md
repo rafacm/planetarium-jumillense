@@ -7,6 +7,8 @@ Tierra y su órbita alrededor del Sol.
 
 Web: https://planetarium-jumillense.vercel.app
 
+![Mapa del Planetarium Jumillense: las bandas de los planetas alrededor del Castillo de Jumilla, con el panel de astros a la derecha](docs/screenshot.png)
+
 ## Escala
 
 - 1 cm del plano 1/25.000 = 250 m
